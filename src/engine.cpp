@@ -3,7 +3,7 @@
 Engine::Engine() : runtime(nullptr), engine(nullptr), context(nullptr) {
     runtime = nvinfer1::createInferRuntime(gLogger);
     if (!runtime) {
-        std::cerr << "Failed to create TensorRT runtime." << std::endl;
+        this->gLogger.log(Severity::kERROR, "Failed to create TensorRT runtime");
     }        
 }
 
@@ -28,7 +28,7 @@ Engine::~Engine() {
 bool Engine::loadEngine(const std::string& enginePath){
     std::ifstream engineFile(enginePath, std::ios::binary);
     if (!engineFile) {
-        std::cerr << "Error: Could not open engine file: " << enginePath << std::endl;
+        this->gLogger.log(Severity::kERROR, "Failed to open engine file");
         return false;
     }
 
@@ -42,12 +42,12 @@ bool Engine::loadEngine(const std::string& enginePath){
 
     engine = runtime->deserializeCudaEngine(engineData.data(), engineSize);
     if (!engine) {
-        std::cerr << "Error: Failed to deserialize CUDA engine." << std::endl;
+        this->gLogger.log(Severity::kERROR, "Failed to deserialize CUDA engine");
         delete engine;
         delete runtime;
         return false;
     }else{
-        std::cout << "CUDA engine deserialized successfully." << std::endl;
+        this->gLogger.log(Severity::kINFO, "CUDA engine deserialized successfully.");
     }
     // Create an execution context for the engine
     context = engine->createExecutionContext();
@@ -62,10 +62,10 @@ bool Engine::loadEngine(const std::string& enginePath){
     num_detections = engine->getTensorShape(Outtensorname).d[2];
     // Calculate the number of classes based on detection attributes
     num_classes = detection_attribute_size - 4;
-    std::cout << "Input dimensions: " << input_w << "x" << input_h << std::endl;
-    std::cout << "Detection attributes: " << detection_attribute_size << std::endl;
-    std::cout << "Number of detections: " << num_detections << std::endl;
-    std::cout << "Number of classes: " << num_classes << std::endl;
+    this->gLogger.log(Severity::kINFO, ("Input dimensions: " + std::to_string(input_w) + "x" + std::to_string(input_h)).c_str());
+    this->gLogger.log(Severity::kINFO, ("Detection attributes: " + std::to_string(detection_attribute_size)).c_str());
+    this->gLogger.log(Severity::kINFO, ("Number of detections: " + std::to_string(num_detections)).c_str());
+    this->gLogger.log(Severity::kINFO, ("Number of classes: " + std::to_string(num_classes)).c_str());
     
     // // Allocate CPU memory for output buffer
     // cpu_output_buffer = new float[detection_attribute_size * num_detections];
@@ -82,7 +82,8 @@ bool Engine::loadEngine(const std::string& enginePath){
         this->preprocess(warmup_image); // Preprocess the warmup image
         this->infer(); // Run inference to warm up the model
     }
-    printf("model warmup 10 times\n");
+    // printf("model warmup 10 times\n");
+    this->gLogger.log(Severity::kINFO, "model warmup 10 times");
     return true;
 }
 // Preprocess the input image and transfer it to the GPU buffer

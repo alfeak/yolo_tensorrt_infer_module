@@ -5,12 +5,8 @@ int imageload(cv::Mat& img, const std::string& filename) {
 
     // 检查图像是否成功加载
     if (img.empty()) {
-        std::cerr << "Error: Could not read image file " << filename << std::endl;
         return -1; // 返回错误码
-    }else{
-        std:cout << "Image loaded successfully" << std::endl;
     }
-
     return 0; // 成功
 }
 
