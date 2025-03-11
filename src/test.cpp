@@ -21,8 +21,11 @@ int main() {
     } else{
         engine.gLogger.log(ILogger::Severity::kINFO, "engine load successfully");
     }
-    engine.preprocess(img);
-    
-
+    vector<Detection> results;
+    engine.inference(img,results,true);
+    // output results
+    engine.draw(img,results);
+    // save to "result.jpg"
+    cv::imwrite("result.jpg", img);
     return 0;
 }

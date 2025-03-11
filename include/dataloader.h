@@ -49,7 +49,7 @@ struct Detection
 {
     float conf;      //!< Confidence score of the detection.
     int class_id;    //!< Class ID of the detected object.
-    Rect bbox;       //!< Bounding box of the detected object.
+    cv::Rect bbox;       //!< Bounding box of the detected object.
 };
 
 int imageload(cv::Mat& img, const std::string& filename);

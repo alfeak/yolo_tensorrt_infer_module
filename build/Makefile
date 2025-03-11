@@ -177,6 +177,30 @@ src/engine.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolo_infer.dir/build.make CMakeFiles/yolo_infer.dir/src/engine.cpp.s
 .PHONY : src/engine.cpp.s
 
+src/postprocess.o: src/postprocess.cu.o
+.PHONY : src/postprocess.o
+
+# target to build an object file
+src/postprocess.cu.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolo_infer.dir/build.make CMakeFiles/yolo_infer.dir/src/postprocess.cu.o
+.PHONY : src/postprocess.cu.o
+
+src/postprocess.i: src/postprocess.cu.i
+.PHONY : src/postprocess.i
+
+# target to preprocess a source file
+src/postprocess.cu.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolo_infer.dir/build.make CMakeFiles/yolo_infer.dir/src/postprocess.cu.i
+.PHONY : src/postprocess.cu.i
+
+src/postprocess.s: src/postprocess.cu.s
+.PHONY : src/postprocess.s
+
+# target to generate assembly for a file
+src/postprocess.cu.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/yolo_infer.dir/build.make CMakeFiles/yolo_infer.dir/src/postprocess.cu.s
+.PHONY : src/postprocess.cu.s
+
 src/preprocess.o: src/preprocess.cu.o
 .PHONY : src/preprocess.o
 
@@ -240,6 +264,9 @@ help:
 	@echo "... src/engine.o"
 	@echo "... src/engine.i"
 	@echo "... src/engine.s"
+	@echo "... src/postprocess.o"
+	@echo "... src/postprocess.i"
+	@echo "... src/postprocess.s"
 	@echo "... src/preprocess.o"
 	@echo "... src/preprocess.i"
 	@echo "... src/preprocess.s"

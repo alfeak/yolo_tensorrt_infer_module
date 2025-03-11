@@ -97,10 +97,24 @@ CMakeFiles/yolo_infer.dir/src/engine.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/yolo_infer.dir/src/engine.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/alfeak/lidar/workspace/implement/yolo_tensorrt_infer_module/src/engine.cpp -o CMakeFiles/yolo_infer.dir/src/engine.cpp.s
 
+CMakeFiles/yolo_infer.dir/src/postprocess.cu.o: CMakeFiles/yolo_infer.dir/flags.make
+CMakeFiles/yolo_infer.dir/src/postprocess.cu.o: ../src/postprocess.cu
+CMakeFiles/yolo_infer.dir/src/postprocess.cu.o: CMakeFiles/yolo_infer.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/alfeak/lidar/workspace/implement/yolo_tensorrt_infer_module/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CUDA object CMakeFiles/yolo_infer.dir/src/postprocess.cu.o"
+	/usr/local/cuda-12.6/bin/nvcc -forward-unknown-to-host-compiler $(CUDA_DEFINES) $(CUDA_INCLUDES) $(CUDA_FLAGS) -MD -MT CMakeFiles/yolo_infer.dir/src/postprocess.cu.o -MF CMakeFiles/yolo_infer.dir/src/postprocess.cu.o.d -x cu -c /home/alfeak/lidar/workspace/implement/yolo_tensorrt_infer_module/src/postprocess.cu -o CMakeFiles/yolo_infer.dir/src/postprocess.cu.o
+
+CMakeFiles/yolo_infer.dir/src/postprocess.cu.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CUDA source to CMakeFiles/yolo_infer.dir/src/postprocess.cu.i"
+	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CUDA_CREATE_PREPROCESSED_SOURCE
+
+CMakeFiles/yolo_infer.dir/src/postprocess.cu.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CUDA source to assembly CMakeFiles/yolo_infer.dir/src/postprocess.cu.s"
+	$(CMAKE_COMMAND) -E cmake_unimplemented_variable CMAKE_CUDA_CREATE_ASSEMBLY_SOURCE
+
 CMakeFiles/yolo_infer.dir/src/preprocess.cu.o: CMakeFiles/yolo_infer.dir/flags.make
 CMakeFiles/yolo_infer.dir/src/preprocess.cu.o: ../src/preprocess.cu
 CMakeFiles/yolo_infer.dir/src/preprocess.cu.o: CMakeFiles/yolo_infer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/alfeak/lidar/workspace/implement/yolo_tensorrt_infer_module/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CUDA object CMakeFiles/yolo_infer.dir/src/preprocess.cu.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/alfeak/lidar/workspace/implement/yolo_tensorrt_infer_module/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CUDA object CMakeFiles/yolo_infer.dir/src/preprocess.cu.o"
 	/usr/local/cuda-12.6/bin/nvcc -forward-unknown-to-host-compiler $(CUDA_DEFINES) $(CUDA_INCLUDES) $(CUDA_FLAGS) -MD -MT CMakeFiles/yolo_infer.dir/src/preprocess.cu.o -MF CMakeFiles/yolo_infer.dir/src/preprocess.cu.o.d -x cu -c /home/alfeak/lidar/workspace/implement/yolo_tensorrt_infer_module/src/preprocess.cu -o CMakeFiles/yolo_infer.dir/src/preprocess.cu.o
 
 CMakeFiles/yolo_infer.dir/src/preprocess.cu.i: cmake_force
@@ -114,7 +128,7 @@ CMakeFiles/yolo_infer.dir/src/preprocess.cu.s: cmake_force
 CMakeFiles/yolo_infer.dir/src/test.cpp.o: CMakeFiles/yolo_infer.dir/flags.make
 CMakeFiles/yolo_infer.dir/src/test.cpp.o: ../src/test.cpp
 CMakeFiles/yolo_infer.dir/src/test.cpp.o: CMakeFiles/yolo_infer.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/alfeak/lidar/workspace/implement/yolo_tensorrt_infer_module/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/yolo_infer.dir/src/test.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/alfeak/lidar/workspace/implement/yolo_tensorrt_infer_module/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/yolo_infer.dir/src/test.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/yolo_infer.dir/src/test.cpp.o -MF CMakeFiles/yolo_infer.dir/src/test.cpp.o.d -o CMakeFiles/yolo_infer.dir/src/test.cpp.o -c /home/alfeak/lidar/workspace/implement/yolo_tensorrt_infer_module/src/test.cpp
 
 CMakeFiles/yolo_infer.dir/src/test.cpp.i: cmake_force
@@ -129,6 +143,7 @@ CMakeFiles/yolo_infer.dir/src/test.cpp.s: cmake_force
 yolo_infer_OBJECTS = \
 "CMakeFiles/yolo_infer.dir/src/dataloader.cpp.o" \
 "CMakeFiles/yolo_infer.dir/src/engine.cpp.o" \
+"CMakeFiles/yolo_infer.dir/src/postprocess.cu.o" \
 "CMakeFiles/yolo_infer.dir/src/preprocess.cu.o" \
 "CMakeFiles/yolo_infer.dir/src/test.cpp.o"
 
@@ -137,6 +152,7 @@ yolo_infer_EXTERNAL_OBJECTS =
 
 yolo_infer: CMakeFiles/yolo_infer.dir/src/dataloader.cpp.o
 yolo_infer: CMakeFiles/yolo_infer.dir/src/engine.cpp.o
+yolo_infer: CMakeFiles/yolo_infer.dir/src/postprocess.cu.o
 yolo_infer: CMakeFiles/yolo_infer.dir/src/preprocess.cu.o
 yolo_infer: CMakeFiles/yolo_infer.dir/src/test.cpp.o
 yolo_infer: CMakeFiles/yolo_infer.dir/build.make
@@ -158,7 +174,7 @@ yolo_infer: /usr/lib/libopencv_flann.so.4.8.0
 yolo_infer: /usr/lib/libopencv_imgproc.so.4.8.0
 yolo_infer: /usr/lib/libopencv_core.so.4.8.0
 yolo_infer: CMakeFiles/yolo_infer.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/alfeak/lidar/workspace/implement/yolo_tensorrt_infer_module/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX executable yolo_infer"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/alfeak/lidar/workspace/implement/yolo_tensorrt_infer_module/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX executable yolo_infer"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/yolo_infer.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

@@ -1,4 +1,21 @@
 #include "engine.h"
+#include <chrono>
+using namespace std::chrono;
+class Timer {
+    public:
+        Timer() : start_time(high_resolution_clock::now()) {}
+    
+        void reset() {
+            start_time = high_resolution_clock::now();
+        }
+    
+        double elapsed() const {
+            return duration_cast<milliseconds>(high_resolution_clock::now() - start_time).count();
+        }
+    
+    private:
+        time_point<high_resolution_clock> start_time;
+    };
 
 Engine::Engine() : runtime(nullptr), engine(nullptr), context(nullptr) {
     runtime = nvinfer1::createInferRuntime(gLogger);
@@ -12,10 +29,10 @@ Engine::~Engine() {
     CUDA_CHECK(cudaStreamSynchronize(stream));
     CUDA_CHECK(cudaStreamDestroy(stream));
     // Free allocated GPU buffers
-    for (int i = 0; i < 2; i++)
+    for (int i = 0; i < 3; i++)
         CUDA_CHECK(cudaFree(gpu_buffers[i]));
-    // // Free CPU output buffer
-    // delete[] cpu_output_buffer;
+    // Free CPU output buffer
+    delete[] cpu_output_buffer;
     // Destroy CUDA preprocessing resources
     cuda_preprocess_destroy();
     // Delete TensorRT context, engine, and runtime
@@ -58,7 +75,7 @@ bool Engine::loadEngine(const std::string& enginePath){
     input_h = engine->getTensorShape(Inptensorname).d[2];
     input_w = engine->getTensorShape(Inptensorname).d[3];
     // Retrieve detection attributes and number of detections
-    detection_attribute_size = engine->getTensorShape(Outtensorname).d[1];
+    detection_attribute_size = engine->getTensorShape(Outtensorname).d[1];  // 84 * 8400
     num_detections = engine->getTensorShape(Outtensorname).d[2];
     // Calculate the number of classes based on detection attributes
     num_classes = detection_attribute_size - 4;
@@ -67,12 +84,14 @@ bool Engine::loadEngine(const std::string& enginePath){
     this->gLogger.log(Severity::kINFO, ("Number of detections: " + std::to_string(num_detections)).c_str());
     this->gLogger.log(Severity::kINFO, ("Number of classes: " + std::to_string(num_classes)).c_str());
     
-    // // Allocate CPU memory for output buffer
-    // cpu_output_buffer = new float[detection_attribute_size * num_detections];
+    // Allocate CPU memory for output buffer
+    cpu_output_buffer = new float[detection_attribute_size * num_detections]; 
     // Allocate GPU memory for input buffer (assuming 3 channels: RGB)
     CUDA_CHECK(cudaMalloc(&gpu_buffers[0], 3 * input_w * input_h * sizeof(float)));
     // Allocate GPU memory for output buffer
     CUDA_CHECK(cudaMalloc(&gpu_buffers[1], detection_attribute_size * num_detections * sizeof(float)));
+    // Initialize CUDA postprocessing buffer
+    CUDA_CHECK(cudaMalloc(&gpu_buffers[2], 7 * num_detections * sizeof(float)));
     // Initialize CUDA preprocessing with maximum image size
     cuda_preprocess_init(MAX_IMAGE_SIZE);
     // Create a CUDA stream for asynchronous operations
@@ -101,66 +120,79 @@ void Engine::infer() {
     this->context->enqueueV3(this->stream);
 }
 
-void Engine::postprocess(float* cpu_output_buffer)
+void Engine::postprocess(vector<Detection>& output)
 {
-     // Asynchronously copy output from GPU to CPU
-     CUDA_CHECK(cudaMemcpyAsync(cpu_output_buffer, gpu_buffers[1], this->num_detections * this->detection_attribute_size * sizeof(float), cudaMemcpyDeviceToHost, stream));
-     // Synchronize the CUDA stream to ensure copy is complete
-     CUDA_CHECK(cudaStreamSynchronize(stream));
+    vector<Rect> boxes;          // Bounding boxes
+    vector<int> class_ids;       // Class IDs
+    vector<float> confidences;   // Confidence scores
+
+    cuda_decode(gpu_buffers[1],gpu_buffers[2],boxes,class_ids,confidences, detection_attribute_size,num_detections, conf_threshold,nms_threshold, stream);
+    for (int i = 0; i < boxes.size(); i++)
+    {
+        Detection result;
+        result.class_id = class_ids[i];
+        result.conf = confidences[i];
+        result.bbox = boxes[i];
+        output.push_back(result);
+    }
 }
-void nms(float* cpu_output_buffer, vector<Detection>& output,int num_detections, int detection_attribute_size, float nms_threshold , float conf_threshold){
-     vector<Rect> boxes;          // Bounding boxes
-     vector<int> class_ids;       // Class IDs
-     vector<float> confidences;   // Confidence scores
- 
-     // Create a matrix view of the detection output
-     const Mat det_output(detection_attribute_size, num_detections, CV_32F, cpu_output_buffer);
- 
-     // Iterate over each detection
-     for (int i = 0; i < det_output.cols; ++i) {
-         // Extract class scores for the current detection
-         const Mat classes_scores = det_output.col(i).rowRange(4, detection_attribute_size);
-         Point class_id_point;
-         double score;
-         // Find the class with the maximum score
-         minMaxLoc(classes_scores, nullptr, &score, nullptr, &class_id_point);
- 
-         // Check if the confidence score exceeds the threshold
-         if (score > conf_threshold) {
-             // Extract bounding box coordinates
-             const float cx = det_output.at<float>(0, i);
-             const float cy = det_output.at<float>(1, i);
-             const float ow = det_output.at<float>(2, i);
-             const float oh = det_output.at<float>(3, i);
-             Rect box;
-             // Calculate top-left corner of the bounding box
-             box.x = static_cast<int>((cx - 0.5 * ow));
-             box.y = static_cast<int>((cy - 0.5 * oh));
-             // Set width and height of the bounding box
-             box.width = static_cast<int>(ow);
-             box.height = static_cast<int>(oh);
- 
-             // Store the bounding box, class ID, and confidence
-             boxes.push_back(box);
-             class_ids.push_back(class_id_point.y);
-             confidences.push_back(score);
-         }
-     }
- 
-     vector<int> nms_result; // Indices after Non-Maximum Suppression (NMS)
-     // Apply NMS to remove overlapping boxes
-     dnn::NMSBoxes(boxes, confidences, conf_threshold, nms_threshold, nms_result);
- 
-     // Iterate over NMS results and populate the output detections
-     for (int i = 0; i < nms_result.size(); i++)
-     {
-         Detection result;
-         int idx = nms_result[i];
-         result.class_id = class_ids[idx];
-         result.conf = confidences[idx];
-         result.bbox = boxes[idx];
-         output.push_back(result);
-     }
+void Engine::postprocess_cpu(vector<Detection>& output){
+    // Asynchronously copy output from GPU to CPU
+    CUDA_CHECK(cudaMemcpyAsync(cpu_output_buffer, gpu_buffers[1], num_detections * detection_attribute_size * sizeof(float), cudaMemcpyDeviceToHost, stream));
+    // Synchronize the CUDA stream to ensure copy is complete
+    CUDA_CHECK(cudaStreamSynchronize(stream));
+
+    vector<Rect> boxes;          // Bounding boxes
+    vector<int> class_ids;       // Class IDs
+    vector<float> confidences;   // Confidence scores
+
+    // Create a matrix view of the detection output
+    const Mat det_output(detection_attribute_size, num_detections, CV_32F, cpu_output_buffer);
+
+    // Iterate over each detection
+    for (int i = 0; i < det_output.cols; ++i) {
+        // Extract class scores for the current detection
+        const Mat classes_scores = det_output.col(i).rowRange(4, 4 + num_classes);
+        Point class_id_point;
+        double score;
+        // Find the class with the maximum score
+        minMaxLoc(classes_scores, nullptr, &score, nullptr, &class_id_point);
+
+        // Check if the confidence score exceeds the threshold
+        if (score > conf_threshold) {
+            // Extract bounding box coordinates
+            const float cx = det_output.at<float>(0, i);
+            const float cy = det_output.at<float>(1, i);
+            const float ow = det_output.at<float>(2, i);
+            const float oh = det_output.at<float>(3, i);
+            Rect box;
+            // Calculate top-left corner of the bounding box
+            box.x = static_cast<int>((cx - 0.5 * ow));
+            box.y = static_cast<int>((cy - 0.5 * oh));
+            // Set width and height of the bounding box
+            box.width = static_cast<int>(ow);
+            box.height = static_cast<int>(oh);
+
+            // Store the bounding box, class ID, and confidence
+            boxes.push_back(box);
+            class_ids.push_back(class_id_point.y);
+            confidences.push_back(score);
+        }
+    }
+    vector<int> nms_result; // Indices after Non-Maximum Suppression (NMS)
+    // Apply NMS to remove overlapping boxes
+    dnn::NMSBoxes(boxes, confidences, conf_threshold, nms_threshold, nms_result);
+
+    // Iterate over NMS results and populate the output detections
+    for (int i = 0; i < nms_result.size(); i++)
+    {
+        Detection result;
+        int idx = nms_result[i];
+        result.class_id = class_ids[idx];
+        result.conf = confidences[idx];
+        result.bbox = boxes[idx];
+        output.push_back(result);
+    }
 }
 void Engine::draw(Mat& image, const vector<Detection>& output)
 {
@@ -208,4 +240,33 @@ void Engine::draw(Mat& image, const vector<Detection>& output)
         // Put the text label on the image
         putText(image, class_string, Point(box.x + 5, box.y - 10), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 2, 0);
     }
+}
+void Engine::inference(Mat& image, vector<Detection>& output,const bool use_gpu){
+    Timer timer;
+
+    // 计时预处理
+    timer.reset();
+    preprocess(image);
+    double preprocess_time = timer.elapsed();
+
+    // 计时推理
+    timer.reset();
+    infer();
+    double infer_time = timer.elapsed();
+
+    // 计时后处理
+    timer.reset();
+    if (use_gpu){
+        postprocess(output);
+    }else{
+        postprocess_cpu(output);
+    }
+    double postprocess_time = timer.elapsed();
+
+    std::string log_message = 
+        "Preprocess time: " + std::to_string(preprocess_time) + "ms, " +
+        "Infer time: " + std::to_string(infer_time) + "ms, " +
+        "Postprocess time: " + std::to_string(postprocess_time) + "ms";
+
+    gLogger.log(ILogger::Severity::kINFO, log_message.c_str());
 }

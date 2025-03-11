@@ -7,12 +7,12 @@
 #include <vector>
 #include <fstream>
 #include <iomanip>
-#include <chrono>
 #include <ctime>
 #include <cuda_runtime.h>
 #include "dataloader.h"
 #include "cuda_utils.h"
 #include "preprocess.h"
+#include "postprocess.h"
 
 using namespace nvinfer1;
 using namespace std;
@@ -57,19 +57,20 @@ class Engine {
 
         Logger gLogger;
         bool loadEngine(const std::string& enginePath);
-        // bool infer(const std::vector<float>& inputData, std::vector<float>& outputData);
         void preprocess(Mat& image);
         void infer();
-        void postprocess(float* cpu_output_buffer);
+        void postprocess(vector<Detection>& output);
+        void postprocess_cpu(vector<Detection>& output);
         void draw(Mat& image, const vector<Detection>& output);
+        void inference(Mat& image, vector<Detection>& output,const bool use_gpu);
     
     private:
         nvinfer1::IRuntime* runtime;
         nvinfer1::ICudaEngine* engine;
         nvinfer1::IExecutionContext* context;
         cudaStream_t stream;
-        float* gpu_buffers[2]; //!< The vector of device buffers needed for engine execution.
-        // float* cpu_output_buffer; //!< Pointer to the output buffer on the host.
+        float* gpu_buffers[3]; //!< The vector of device buffers needed for engine execution.
+        float* cpu_output_buffer; //!< Pointer to the output buffer on the host.
         int input_w; //!< Width of the input image.
         int input_h; //!< Height of the input image.
         const int MAX_IMAGE_SIZE = 4096 * 4096; //!< Maximum allowed input image size.
@@ -77,14 +78,12 @@ class Engine {
     public:
         char const * Inptensorname;
         char const * Outtensorname;
+        int max_detections = 100;
         int num_classes = 80; //!< Number of object classes that can be detected.
         int num_detections; //!< Number of detections output by the model.
         int detection_attribute_size; //!< Size of each detection attribute.
-        float conf_threshold = 0.3f; //!< Confidence threshold for filtering detections.
-        float nms_threshold = 0.4f; //!< Non-Maximum Suppression (NMS) threshold for filtering overlapping boxes.
+        float conf_threshold = 0.6f; //!< Confidence threshold for filtering detections.
+        float nms_threshold = 0.6f; //!< Non-Maximum Suppression (NMS) threshold for filtering overlapping boxes.
     };
 
-    
-    
-void nms(float* cpu_output_buffer, vector<Detection>& output,int num_detections, int detection_attribute_size, float nms_threshold , float conf_threshold);
 #endif // ENGINELOAD_H
